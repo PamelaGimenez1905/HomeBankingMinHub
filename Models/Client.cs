@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-namespace HomeBankingMinHub.Models
+namespace HomeBankingMindHub.Models
 {
     public class Client
     {
@@ -8,5 +8,6 @@ namespace HomeBankingMinHub.Models
         public string LastName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
+        public ICollection<Account> Accounts { get; set; }
     }
 }

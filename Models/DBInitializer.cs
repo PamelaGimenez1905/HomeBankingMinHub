@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace HomeBankingMinHub.Models
+namespace HomeBankingMindHub.Models
 {
     public class DBInitializer
     {
@@ -24,6 +24,59 @@ namespace HomeBankingMinHub.Models
                 //guardamos
                 context.SaveChanges();
             }
+
+            if (!context.Account.Any())
+            {
+                var accountVictor = context.Clients.FirstOrDefault(c => c.Email == "vcoronado@gmail.com");
+                if (accountVictor != null)
+                {
+                    var accounts = new Account[]
+                    {
+                        new Account {ClientId = accountVictor.Id, CreationDate = DateTime.Now, Number = "VIN001", Balance = 0 }
+                    };
+                    foreach (Account account in accounts)
+                    {
+                        context.Account.Add(account);
+                    }
+                    context.SaveChanges();
+                }
+
+
+                var accountJuan = context.Clients.FirstOrDefault(c => c.Email == "juan@gmail.com");
+                if (accountJuan != null)
+                {
+                    var accounts = new Account[]
+                    {
+                        new Account {ClientId = accountJuan.Id, CreationDate = DateTime.Today, Number = "VIN002", Balance =10000 }
+                    };
+                    foreach (Account account in accounts)
+                    {
+                        context.Account.Add(account);
+                    }
+                    context.SaveChanges();
+                }
+
+                var accountMaria = context.Clients.FirstOrDefault(c => c.Email == "maria@gmail.com");
+                if (accountMaria != null)
+                {
+                    var accounts = new Account[]
+                    {
+                        new Account {ClientId = accountMaria.Id, CreationDate = DateTime.Now, Number = "VIN003", Balance = 20000 }
+                    };
+                    foreach (Account account in accounts)
+                    {
+                        context.Account.Add(account);
+                    }
+                    context.SaveChanges();
+                }
+
+               
+
+
+            }
+
+                
+
 
         }
     }
