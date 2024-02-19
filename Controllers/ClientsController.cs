@@ -10,7 +10,7 @@ using HomeBankingMindHub.Controllers;
 
 namespace HomeBankingMindHub.Controllers
 {
-    [Route("api/Clients")]
+    [Route("api´/[controller]")]
     [ApiController]
     public class ClientsController : ControllerBase
     {
