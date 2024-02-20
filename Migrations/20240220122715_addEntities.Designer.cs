@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace HomeBankingMinHub.Migrations
+namespace HomeBankingMindHub.Migrations
 {
     [DbContext(typeof(HomeBankingContext))]
-    [Migration("20240216142730_AddAccountEntity")]
-    partial class AddAccountEntity
+    [Migration("20240220122715_addEntities")]
+    partial class addEntities
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace HomeBankingMinHub.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("HomeBankingMinHub.Models.Account", b =>
+            modelBuilder.Entity("HomeBankingMindHub.Models.Account", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -49,10 +49,10 @@ namespace HomeBankingMinHub.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("Account");
+                    b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("HomeBankingMinHub.Models.Client", b =>
+            modelBuilder.Entity("HomeBankingMindHub.Models.Client", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,9 +77,39 @@ namespace HomeBankingMinHub.Migrations
                     b.ToTable("Clients");
                 });
 
-            modelBuilder.Entity("HomeBankingMinHub.Models.Account", b =>
+            modelBuilder.Entity("HomeBankingMindHub.Models.Transaction", b =>
                 {
-                    b.HasOne("HomeBankingMinHub.Models.Client", "Client")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("AccountId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("HomeBankingMindHub.Models.Account", b =>
+                {
+                    b.HasOne("HomeBankingMindHub.Models.Client", "Client")
                         .WithMany("Accounts")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -88,7 +118,23 @@ namespace HomeBankingMinHub.Migrations
                     b.Navigation("Client");
                 });
 
-            modelBuilder.Entity("HomeBankingMinHub.Models.Client", b =>
+            modelBuilder.Entity("HomeBankingMindHub.Models.Transaction", b =>
+                {
+                    b.HasOne("HomeBankingMindHub.Models.Account", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("HomeBankingMindHub.Models.Account", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("HomeBankingMindHub.Models.Client", b =>
                 {
                     b.Navigation("Accounts");
                 });

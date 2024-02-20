@@ -8,10 +8,12 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(x =>
-x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+
 
 builder.Services.AddDbContext<HomeBankingContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("HomeBankingConexion")));
@@ -65,6 +67,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapRazorPages();
+
+app.UseDefaultFiles();
 
 app.Run();
