@@ -4,6 +4,7 @@ using HomeBankingMindHub.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HomeBankingMindHub.Migrations
 {
     [DbContext(typeof(HomeBankingContext))]
-    partial class HomeBankingContextModelSnapshot : ModelSnapshot
+    [Migration("20240220154740_addLoanEntitity")]
+    partial class addLoanEntitity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -117,7 +120,7 @@ namespace HomeBankingMindHub.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Payments")
+                    b.Property<string>("Paymments")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -169,7 +172,7 @@ namespace HomeBankingMindHub.Migrations
             modelBuilder.Entity("HomeBankingMindHub.Models.ClientLoan", b =>
                 {
                     b.HasOne("HomeBankingMindHub.Models.Client", "Client")
-                        .WithMany("ClientLoans")
+                        .WithMany("Loans")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -205,7 +208,7 @@ namespace HomeBankingMindHub.Migrations
                 {
                     b.Navigation("Accounts");
 
-                    b.Navigation("ClientLoans");
+                    b.Navigation("Loans");
                 });
 
             modelBuilder.Entity("HomeBankingMindHub.Models.Loan", b =>

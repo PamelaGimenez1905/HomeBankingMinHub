@@ -10,20 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddJsonOptions(x =>
 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
-
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-
-
 builder.Services.AddDbContext<HomeBankingContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("HomeBankingConexion")));
 
+builder.Services.AddScoped<IClientRepository, ClientRepository>();
 
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 // Add services to the container.
-builder.Services.AddRazorPages();
 
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -50,7 +46,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.MapControllers();
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -61,13 +57,10 @@ else {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.MapControllers();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
-
-
 app.UseDefaultFiles();
-
 app.Run();
