@@ -76,14 +76,27 @@ namespace HomeBankingMindHub.Controllers
 
                         }).ToList(),
 
-                          Loans = client.ClientLoans.Select(cl => new ClientLoanDTO
-                          {
-                              Id = cl.Id,
-                              LoanId = cl.LoanId,
-                              Name = cl.Loan.Name,
-                              Amount = cl.Amount,
-                              Payments = int.Parse(cl.Payments)
-                          }).ToList()
+                        Loans = client.ClientLoans.Select(cl => new ClientLoanDTO
+                        {
+                            Id = cl.Id,
+                            LoanId = cl.LoanId,
+                            Name = cl.Loan.Name,
+                            Amount = cl.Amount,
+                            Payments = int.Parse(cl.Payments)
+                        }).ToList(),
+
+
+                        Cards = client.Cards.Select(c => new CardDTO
+                        {
+                            Id = c.Id,
+                            CardHolder = c.CardHolder,
+                            Color = c.Color.ToString(),
+                            Cvv = c.Cvv,
+                            FromDate = c.FromDate,
+                            Number = c.Number,
+                            ThruDate = c.ThruDate,
+                            Type = c.Type.ToString(),
+                        }).ToList()
 
                     };
 
@@ -169,6 +182,18 @@ namespace HomeBankingMindHub.Controllers
                         Amount = cl.Amount,
                         Payments = int.Parse(cl.Payments)
 
+                    }).ToList(),
+
+                    Cards = client.Cards.Select(c => new CardDTO
+                    {
+                        Id = c.Id,
+                        CardHolder = c.CardHolder,
+                        Color = c.Color.ToString(),
+                        Cvv = c.Cvv,
+                        FromDate = c.FromDate,
+                        Number = c.Number,
+                        ThruDate = c.ThruDate,
+                        Type = c.Type.ToString(),
                     }).ToList()
 
                 };
