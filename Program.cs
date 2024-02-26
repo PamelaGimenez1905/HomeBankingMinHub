@@ -2,6 +2,7 @@ using HomeBankingMindHub.Repositories;
 using HomeBankingMindHub.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 
 
@@ -16,6 +17,26 @@ options.UseSqlServer(builder.Configuration.GetConnectionString("HomeBankingConex
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
 
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+
+// crea el servicio middleware de autenticación
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+      .AddCookie(options =>
+      {   //tiempo de expiración de la cookie
+          options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+          //nos dirige al index para que nos identifiquemos
+          options.LoginPath = new PathString("/index.html");
+      });
+
+//autorización
+builder.Services.AddAuthorization(options =>
+{   //agregar una politica, una regla de autorización llamada client only y otra Admin Only donde puede acceder el cliente y el admin respectivamente
+    //y pueden acceder los que tengan el claim  Client
+    options.AddPolicy("ClientOnly", policy => policy.RequireClaim("Client"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Admin"));
+});
+
+
+
 
 // Add services to the container.
 
@@ -64,3 +85,6 @@ app.UseRouting();
 app.UseAuthorization();
 app.UseDefaultFiles();
 app.Run();
+//le decimos que use autenticación
+app.UseAuthentication();
+app.UseAuthorization();
