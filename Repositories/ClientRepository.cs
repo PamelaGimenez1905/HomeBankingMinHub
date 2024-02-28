@@ -1,5 +1,6 @@
 ﻿using HomeBankingMindHub.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -52,5 +53,7 @@ namespace HomeBankingMindHub.Repositories
         {
             return FindByCondition(client => client.Email == email).Any();
         }
+
+       
     }
 }

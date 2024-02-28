@@ -10,6 +10,7 @@ namespace HomeBankingMindHub.Repositories
         Client FindById(long id);
         Client FindByEmail(string email);
         bool ExistsByEmail(string email);
+        
 
     }
 }

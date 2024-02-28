@@ -5,8 +5,11 @@ using HomeBankingMindHub.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HomeBankingMindHub.Controllers;
+
+using HomeBankingMindHub.Utils;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
 
 
 namespace HomeBankingMindHub.Controllers
@@ -16,15 +19,17 @@ namespace HomeBankingMindHub.Controllers
     public class ClientsController : ControllerBase
     {
         private IClientRepository _clientRepository;
+        private IAccountRepository _accountRepository;
+        private ICardRepository _cardRepository;
+       
 
-
-
-        public ClientsController(IClientRepository clientRepository)
+        public ClientsController(IClientRepository clientRepository, IAccountRepository accountRepository, ICardRepository cardRepository)
 
         {
 
             _clientRepository = clientRepository;
-
+            _accountRepository = accountRepository;
+            _cardRepository = cardRepository;
         }
 
 
@@ -333,7 +338,250 @@ namespace HomeBankingMindHub.Controllers
         }
 
 
+
+
+        [HttpPost("current/accounts")]
+        [Authorize(Policy = "ClientOnly")]
+        public IActionResult CreateAccount()
+        {
+            try
+
+            {   //Obtiene la info del cliente auténticado
+                string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
+                if (email == string.Empty)
+                {
+                    return Forbid();
+                }
+
+                Client client = _clientRepository.FindByEmail(email);
+
+                if (client == null)
+                {
+                    return Forbid();
+                }
+
+                // Verifico límite de cuentas
+                var existingAccounts = _accountRepository.GetAccountsByClient(client.Id);
+                if (existingAccounts.Count() >= 3)
+                {
+                    return StatusCode(403, "Prohibido: El cliente ya tiene 3 cuentas registradas.");
+                }
+
+
+                //Genera nuevo número de cuenta aleatorio
+                string randomNumber = RandomUtils.GenerateRandomNumber();
+                string accountNumber = $"VIN-{randomNumber}";
+
+
+                //Verificar que el número de cuenta no exista en el repositorio
+                do
+                {
+                    randomNumber = RandomUtils.GenerateRandomNumber();
+                    accountNumber = $"VIN -{randomNumber}";
+                } while (_accountRepository.ExistsByAccount(accountNumber).Equals(true));
+                // Crea nueva cuenta
+                var newAccount = new Account
+                {
+                    ClientId = client.Id,
+                    Number = accountNumber,
+                    Balance = 0,
+                    CreationDate = DateTime.Now
+
+                };
+
+               
+
+                _accountRepository.Save(newAccount);
+
+               
+                return StatusCode(201, "Cuenta creada exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+
+        }
+
         
+         [HttpGet("current/accounts")]
+         [Authorize(Policy = "ClientOnly")]
+               public IActionResult GetClientAccounts()
+             {
+                  try
+                  {
+
+                   string email = User.FindFirstValue("Client");
+                       if (string.IsNullOrEmpty(email))
+                        {
+                            return Forbid();
+                        }
+
+                        // Buscar el cliente en la base de datos 
+                        Client client = _clientRepository.FindByEmail(email);
+
+                        if (client == null)
+                        {
+                            return Forbid();
+                        }
+
+                        // Obtener la lista de cuentas del cliente
+                        var clientAccounts = _accountRepository.GetAccountsByClient(client.Id);
+
+
+                        var accountDTO = clientAccounts.Select(account => new AccountDTO
+                        {
+                            Id = account.Id,
+                            Number = account.Number,
+                            Balance = account.Balance,
+                            CreationDate = account.CreationDate
+
+                        }).ToList();
+
+                        return Ok(accountDTO);
+                    }
+                    catch (Exception ex)
+                    {
+                        return StatusCode(500, ex.Message);
+                    }
+                }
+
+
+        [HttpPost("current/cards")]
+        [Authorize(Policy = "ClientOnly")]
+        public IActionResult RequestCard([FromBody] CardTypeAndColorDTO cardTypeAndColor)
+        {
+            try
+            {
+                // Obtener el email del cliente autenticado
+                string email = User.FindFirstValue("Client");
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Forbid();
+                }
+
+                // Buscar el cliente en la base de datos por su correo electrónico
+                Client client = _clientRepository.FindByEmail(email);
+
+                if (client == null)
+                {
+                    return Forbid();
+                }
+
+                // Verificar límite de tarjetas
+                var existingCards = _cardRepository.GetCardsByClient(client.Id);
+                if (existingCards.Count() >= 6)
+                {
+                    return StatusCode(403, " El cliente ya tiene 6 tarjetas registradas.");
+                }
+                int debitCards = existingCards.Count(c => c.Type == CardType.DEBIT);
+                int creditCards = existingCards.Count(c => c.Type == CardType.CREDIT);
+
+                if (cardTypeAndColor.Type.Equals(CardType.DEBIT) && debitCards >= 3)
+                {
+                    return StatusCode(403, " El Cliente ya posee 3 tarjetas de Débito Registradas");
+                }
+                else if (cardTypeAndColor.Type.Equals(CardType.CREDIT) && creditCards >= 3)
+                {
+                    return StatusCode(403, " El Cliente ya posee 3 tarjetas de Crédito Registradas");
+                }
+
+                // Generar números aleatorios para la tarjeta y el CVV
+                string cardNumber = RandomUtils.GenerateRandomCardNumber();
+                int cvv = RandomUtils.GenerateRandomCVV();
+
+                do
+                {
+                    cardNumber = RandomUtils.GenerateRandomCardNumber();
+
+                } while (_cardRepository.ExistsByCardNumber(cardNumber).Equals(true));
+
+
+
+                // Calcular fecha de vencimiento (5 años después de la creación)
+                DateTime ExpirationDate = DateTime.Now.AddYears(5);
+
+                string color = cardTypeAndColor.Color;
+                string type = cardTypeAndColor.Type;
+                //Covierto string a Enum
+                CardColor Color = Enum.Parse<CardColor>(cardTypeAndColor.Color);
+                CardType Type = Enum.Parse<CardType>(cardTypeAndColor.Type);
+
+
+                string FullName = client.FirstName + " " + client.LastName;
+
+                // Crear nueva tarjeta
+                var newCard = new Card
+                {
+                    CardHolder = FullName,
+                    Type = Type,
+                    Color = Color,
+                    Number = cardNumber,
+                    Cvv = cvv,
+                    FromDate = DateTime.Now,
+                    ThruDate = ExpirationDate,
+                    ClientId = client.Id
+                };
+
+                // Guardar la nueva tarjeta en el repositorio
+                _cardRepository.Save(newCard);
+
+                return StatusCode(201, "Tarjeta solicitada exitosamente.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("current/cards")]
+        [Authorize(Policy = "ClientOnly")]
+        public IActionResult GetClientCards()
+        {
+            try
+            {
+                // Obtener el email del cliente autenticado
+                string email = User.FindFirstValue("Client");
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Forbid();
+                }
+
+                // Buscar el cliente en la base de datos por su correo electrónico
+                Client client = _clientRepository.FindByEmail(email);
+
+                if (client == null)
+                {
+                    return Forbid();
+                }
+
+                // Obtener las tarjetas del cliente
+                var clientCards = _cardRepository.GetCardsByClient(client.Id);
+
+               
+                var cardDTOs = clientCards.Select(card => new CardDTO
+                {
+                    Id = card.Id,
+                    CardHolder = card.CardHolder,
+                    Type = card.Type.ToString(),
+                    Color = card.Color.ToString(),
+                    Number = card.Number,
+                    Cvv = card.Cvv,
+                    FromDate = card.FromDate,
+                    ThruDate = card.ThruDate
+                   
+                }).ToList();
+
+                return Ok(cardDTOs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+
 
     }
 

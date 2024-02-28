@@ -35,6 +35,24 @@ namespace HomeBankingMindHub.Repositories
             SaveChanges();
         }
 
-       
+        //Agrego el método implementado en la interfaz
+        public IEnumerable<Account> GetAccountsByClient(long clientId)
+
+        {
+
+            return FindByCondition(account => account.ClientId == clientId)
+
+            .Include(account => account.Transactions)
+
+            .ToList();
+
+        }
+        //verifica si existe alguna cuenta en la base de datos cuyo número coincida con el que recibe
+        public bool ExistsByAccount(string accountNumber)
+        {
+            return RepositoryContext.Accounts.Any(account => account.Number == accountNumber);
+        }
+        
+
     }
 }

@@ -8,5 +8,8 @@ namespace HomeBankingMindHub.Repositories
         void Save(Account account);
         Account FindById(long id);
         Account FindByIdAndClientEmail(long id, string email);
+        bool ExistsByAccount(string accountNumber);
+        IEnumerable<Account> GetAccountsByClient(long clientId);
+      
     }
 }
