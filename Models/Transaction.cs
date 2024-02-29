@@ -7,8 +7,8 @@
         public double Amount { get; set; }
         public String Description { get; set; }
         public DateTime Date {  get; set; }
-        public Account Account { get; set; }
         public long AccountId { get; set; }
+        public Account Account { get; set; }
 
 
     }

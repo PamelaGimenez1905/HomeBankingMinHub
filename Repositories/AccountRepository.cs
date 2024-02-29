@@ -28,11 +28,22 @@ namespace HomeBankingMindHub.Repositories
                 .Include(account => account.Transactions)
                 .ToList();
         }
+        //si el registro tiene un id = 0 crea la cuenta y si es distinto de 0 actualiza
 
         public void Save(Account account)
         {
-            Create(account);
+            if (account.Id == 0)
+            {
+                Create(account);
+            }
+            else
+            {
+                Update(account);
+            }
+
             SaveChanges();
+
+            RepositoryContext.ChangeTracker.Clear();
         }
 
         //Agrego el método implementado en la interfaz
@@ -52,7 +63,14 @@ namespace HomeBankingMindHub.Repositories
         {
             return RepositoryContext.Accounts.Any(account => account.Number == accountNumber);
         }
-        
+
+        //Nos permite buscar la cuenta por su número
+        public Account FindByNumber(string number)
+        {
+            return FindByCondition(account => account.Number.ToUpper() == number.ToUpper())
+            .Include(account => account.Transactions)
+            .FirstOrDefault();
+        }
 
     }
 }
