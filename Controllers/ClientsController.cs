@@ -315,7 +315,16 @@ namespace HomeBankingMindHub.Controllers
                     return StatusCode(403, "El Email ingresado está en uso");
                 }
 
-                
+                //Genera nuevo número de cuenta aleatorio
+                string randomNumber = RandomUtils.GenerateRandomNumber();
+                string accountNumber = $"VIN-{randomNumber}";
+                //Verificar que el número de cuenta no exista en el repositorio
+                do
+                {
+                    randomNumber = RandomUtils.GenerateRandomNumber();
+                    accountNumber = $"VIN -{randomNumber}";
+                } while (_accountRepository.ExistsByAccount(accountNumber));
+
 
                 Client newClient = new Client
                 {
@@ -325,10 +334,22 @@ namespace HomeBankingMindHub.Controllers
                     LastName = client.LastName,
                     
                     
+                    
+                };
+                Account newAccount = new Account
+                {
+                    Number = accountNumber, 
+                    Balance = 0,
+                    CreationDate = DateTime.Now,
+                    Client = newClient,
                 };
 
                 _clientRepository.Save(newClient);
-                return Created("", newClient);
+                _accountRepository.Save(newAccount);
+                return StatusCode(201, "El cliente se creó exitosamente");
+
+               
+
 
             }
             catch (Exception ex)
@@ -345,8 +366,9 @@ namespace HomeBankingMindHub.Controllers
         public IActionResult CreateAccount()
         {
             try
-
-            {   //Obtiene la info del cliente auténticado
+            {  
+                             
+                //Obtiene la info del cliente auténticado
                 string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
                 if (email == string.Empty)
                 {
@@ -378,7 +400,9 @@ namespace HomeBankingMindHub.Controllers
                 {
                     randomNumber = RandomUtils.GenerateRandomNumber();
                     accountNumber = $"VIN -{randomNumber}";
-                } while (_accountRepository.ExistsByAccount(accountNumber).Equals(true));
+                } while (_accountRepository.ExistsByAccount(accountNumber));
+               
+                
                 // Crea nueva cuenta
                 var newAccount = new Account
                 {
@@ -495,7 +519,7 @@ namespace HomeBankingMindHub.Controllers
                 {
                     cardNumber = RandomUtils.GenerateRandomCardNumber();
 
-                } while (_cardRepository.ExistsByCardNumber(cardNumber).Equals(true));
+                } while (_cardRepository.ExistsByCardNumber(cardNumber));
 
 
 
