@@ -228,20 +228,20 @@ namespace HomeBankingMindHub.Controllers
         public IActionResult GetCurrent()
         {
             try
-            {   
+            {   //Obtenemos la info del cliente autenticado
                 string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
                 if (email == string.Empty)
                 {
                     return Forbid();
                 }
-
+                //Busca al cliente por email en el repositorio
                 Client client = _clientRepository.FindByEmail(email);
 
                 if (client == null)
                 {
                     return Forbid();
                 }
-
+                //Creamos el objeto ClientDTO
                 var clientDTO = new ClientDTO
                 {
                     Id = client.Id,
@@ -309,33 +309,31 @@ namespace HomeBankingMindHub.Controllers
                     return StatusCode(403, "El apellido ingresado es incorrecto o nulo");
                 }
 
-               
+                //Implementamos el método para saber si existe el usuario
                 if(_clientRepository.ExistsByEmail(client.Email))
                 {
                     return StatusCode(403, "El Email ingresado está en uso");
-                }
+                }               
 
-                //Genera nuevo número de cuenta aleatorio
-                string randomNumber = RandomUtils.GenerateRandomNumber();
-                string accountNumber = $"VIN-{randomNumber}";
-                //Verificar que el número de cuenta no exista en el repositorio
-                do
-                {
-                    randomNumber = RandomUtils.GenerateRandomNumber();
-                    accountNumber = $"VIN -{randomNumber}";
-                } while (_accountRepository.ExistsByAccount(accountNumber));
-
-
-                Client newClient = new Client
+                 Client newClient = new Client
                 {
                     Email = client.Email,
                     Password = client.Password,
                     FirstName = client.FirstName,
                     LastName = client.LastName,
-                    
-                    
-                    
+                   
                 };
+
+
+                //Verificar que el número de cuenta no exista en el repositorio
+                string randomNumber;
+                string accountNumber;
+                do
+                {
+                    randomNumber = RandomUtils.GenerateRandomNumber();
+                    accountNumber = $"VIN-{randomNumber}";
+                } while (_accountRepository.ExistsByAccount(accountNumber));
+
                 Account newAccount = new Account
                 {
                     Number = accountNumber, 
@@ -493,12 +491,14 @@ namespace HomeBankingMindHub.Controllers
                     return Forbid();
                 }
 
-                // Verificar límite de tarjetas
+                // Verificar límite de tarjetas existentes
                 var existingCards = _cardRepository.GetCardsByClient(client.Id);
                 if (existingCards.Count() >= 6)
                 {
                     return StatusCode(403, " El cliente ya tiene 6 tarjetas registradas.");
                 }
+                
+                //Cuenta el número de tarjetas de débito y crédito entre las existentes
                 int debitCards = existingCards.Count(c => c.Type == CardType.DEBIT);
                 int creditCards = existingCards.Count(c => c.Type == CardType.CREDIT);
 
@@ -526,8 +526,7 @@ namespace HomeBankingMindHub.Controllers
                 // Calcular fecha de vencimiento (5 años después de la creación)
                 DateTime ExpirationDate = DateTime.Now.AddYears(5);
 
-                string color = cardTypeAndColor.Color;
-                string type = cardTypeAndColor.Type;
+               
                 //Covierto string a Enum
                 CardColor Color = Enum.Parse<CardColor>(cardTypeAndColor.Color);
                 CardType Type = Enum.Parse<CardType>(cardTypeAndColor.Type);

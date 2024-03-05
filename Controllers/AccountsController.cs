@@ -75,11 +75,13 @@ namespace HomeBankingMindHub.Controllers
         {
             try
             {
+                //Obtiene el mail del usuario auténticado
                 string email = User.FindFirst("Client") !=null ? User.FindFirst("Client").Value : string.Empty;
                 if(email == string.Empty)
                 {
                     return Forbid();
                 }
+                //Busca una cuenta porel id y el email del cliente
                 var account = _accountRepository.FindByIdAndClientEmail(id, email);
                 if (account == null)
                 {

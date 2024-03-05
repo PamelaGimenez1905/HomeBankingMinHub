@@ -18,6 +18,8 @@ builder.Services.AddScoped<IClientRepository, ClientRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IClientLoanRepository, ClientLoanRepository>();
+builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 
 // crea el servicio middleware de autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -30,7 +32,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 //autorización
 builder.Services.AddAuthorization(options =>
-{   //agregar una politica, una regla de autorización llamada client only y otra Admin Only donde puede acceder el cliente y el admin respectivamente
+{   //agregar una politica, una regla de autorización llamada client only y otra Admin Only
+    //donde puede acceder el cliente y el admin respectivamente
     //y pueden acceder los que tengan el claim  Client
     options.AddPolicy("ClientOnly", policy => policy.RequireClaim("Client"));
     options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Admin"));
@@ -79,13 +82,13 @@ else {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+//le decimos que use autenticación
 
 app.MapControllers();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseDefaultFiles();
 app.Run();
-//le decimos que use autenticación
-app.UseAuthentication();
-app.UseAuthorization();
+
