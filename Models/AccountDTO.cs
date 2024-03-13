@@ -21,6 +21,20 @@ namespace HomeBankingMindHub.Models
         public double Balance { get; set; }
         public ICollection<TransactionDTO> Transactions { get; set; }
 
+        public AccountDTO() { } 
+
+        public AccountDTO (Account account)
+        {
+            Id = account.Id;
+            Number = account.Number;
+            CreationDate = account.CreationDate;
+            Balance = account.Balance;
+            if (account.Transactions != null)
+            {
+                Transactions = account.Transactions.Select(t => new TransactionDTO(t)).ToList();
+            }
+        }
+
     }
 
 }

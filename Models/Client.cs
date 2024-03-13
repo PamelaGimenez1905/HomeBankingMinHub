@@ -12,6 +12,8 @@ namespace HomeBankingMindHub.Models
         public ICollection<Account> Accounts { get; set; }
         public ICollection<ClientLoan> ClientLoans { get; set; }
         public ICollection<Card> Cards { get; set; }
-       
+
+        public Client() { }
+
     }
 }

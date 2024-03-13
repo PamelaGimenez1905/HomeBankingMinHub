@@ -34,7 +34,7 @@ namespace HomeBankingMindHub.Controllers
                     new Claim(user.Email.Contains("@admin.com") ? "Admin" : "Client", user.Email),
                    
 
-                }; //Atenticación del usuario mediante cookie que contiene su información que se va a enviar al cliente
+                }; //Atenticación del usuario mediante cookie que contiene su información que se va a enviar a quien solicite
                     var claimsIdentity = new ClaimsIdentity(
                         claims,
                         CookieAuthenticationDefaults.AuthenticationScheme

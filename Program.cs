@@ -3,6 +3,8 @@ using HomeBankingMindHub.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using HomeBankingMindHub.Services;
+using HomeBankingMindHub.Services.Implements;
 
 
 
@@ -20,6 +22,11 @@ builder.Services.AddScoped<ICardRepository, CardRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IClientLoanRepository, ClientLoanRepository>();
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
+builder.Services.AddScoped<IClientService, ClientService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // crea el servicio middleware de autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -32,9 +39,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 //autorización
 builder.Services.AddAuthorization(options =>
-{   //agregar una politica, una regla de autorización llamada client only y otra Admin Only
-    //donde puede acceder el cliente y el admin respectivamente
-    //y pueden acceder los que tengan el claim  Client
+{
     options.AddPolicy("ClientOnly", policy => policy.RequireClaim("Client"));
     options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Admin"));
 });

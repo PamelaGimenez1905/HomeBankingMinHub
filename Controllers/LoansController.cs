@@ -1,5 +1,7 @@
 ﻿using HomeBankingMindHub.Models;
 using HomeBankingMindHub.Repositories;
+using HomeBankingMindHub.Services;
+using HomeBankingMindHub.Services.Implements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Transactions;
@@ -11,43 +13,35 @@ namespace HomeBankingMindHub.Controllers
     [ApiController]
     public class LoansController : ControllerBase
     {
-        private IClientRepository _clientRepository;
-        private IAccountRepository _accountRepository;
-        private ITransactionRepository _transactionRepository;
-        private IClientLoanRepository _clientLoanRepository;
-        private ILoanRepository _loanRepository;
+        private IClientService _clientService;
+        private IAccountService _accountService;
+        private ITransactionService _transactionService;
+        private ILoanService _loanService;
 
-        public LoansController(IClientRepository clientRepository, IAccountRepository accountRepository, ITransactionRepository transactionRepository, IClientLoanRepository clientLoanRepository, ILoanRepository loanRepository)
+        public LoansController(IClientService clientService, IAccountService accountService, ITransactionService transactionService, ILoanService loanService)
 
         {
 
-            _clientRepository = clientRepository;
-            _accountRepository = accountRepository;
-            _transactionRepository = transactionRepository;
-            _clientLoanRepository = clientLoanRepository;
-            _loanRepository = loanRepository;
+            _clientService = clientService;
+            _accountService = accountService;
+            _transactionService = transactionService;
+            _loanService = loanService;
 
 
         }
 
         [HttpGet]
-        [Authorize(Policy = "ClientOnly")]
+
         public IActionResult Get()
         {
             try
             {
-                var loans = _loanRepository.GetAllLoans();
+                var loans = _loanService.GetAllLoans();
                 var LoansDTO = new List<LoanDTO>();
                 foreach (Loan loan in loans)
                 {
-                    var newLoanDTO = new LoanDTO
-                    {
-                        Id = loan.Id,
-                        Name = loan.Name,
-                        MaxAmount = loan.MaxAmount,
-                        Payments = loan.Payments,
-                        
-                    };
+                    var newLoanDTO = new LoanDTO(loan);
+                   
                     LoansDTO.Add(newLoanDTO);
                 }
                 return StatusCode(200, LoansDTO);
@@ -57,8 +51,6 @@ namespace HomeBankingMindHub.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
-
 
 
 
@@ -77,7 +69,7 @@ namespace HomeBankingMindHub.Controllers
                         return Forbid();
                     }
 
-                    Client client = _clientRepository.FindByEmail(email);
+                    Client client = _clientService.FindByEmail(email);
 
                     if (client == null)
                     {
@@ -85,7 +77,7 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     //préstamo existente
-                    Loan loan = _loanRepository.FindById(loanApplicationDTO.LoanId);
+                    Loan loan = _loanService.FindById(loanApplicationDTO.LoanId);
                     if (loan == null)
                     {
                         return StatusCode(403,"El Préstamo no existe");
@@ -103,19 +95,18 @@ namespace HomeBankingMindHub.Controllers
                         return StatusCode(403,"Los pagos no pueden estar vacíos");
                     }
 
-                    //Numero de cuotas
+                    //Obtiene las cuotas disponibles
                     var newPaymentValues = loan.Payments.Split(',').Select(s => s.Trim()).ToList();
+                    //Obtiene las cuotas
                     var requestedPayments = loanApplicationDTO.Payments.ToString();
-                    if(!newPaymentValues.Contains(requestedPayments))
-                    
-                    //if (!newPaymentValues.Contains(loanApplicationDTO.Payments.ToString()))
+                    if(!newPaymentValues.Contains(requestedPayments))                    
                     {
                         return StatusCode(403,"La cantidad de cuotas ingresadas no es valida para el tipo de prestamo solicitado");
                     }
 
 
                     //Existencia de la cuenta de destino
-                    var account = _accountRepository.FindByNumber(loanApplicationDTO.ToAccountNumber);
+                    var account = _accountService.FindByNumber(loanApplicationDTO.ToAccountNumber);
                     if (account == null)
                     {
                         return StatusCode(403, "La cuenta de destino no ha sido encontrada");
@@ -128,48 +119,13 @@ namespace HomeBankingMindHub.Controllers
                         return StatusCode(403,"La cuenta de destino no pertenece al cliente");
                     }
 
-                    //Al guardar ClientLoan multiplicar el monto por el 20%
-                    double interestAmount = loanApplicationDTO.Amount * 0.20;
-                    double totalAmount= interestAmount + loanApplicationDTO.Amount;         
-                   
+                    _loanService.CreateLoan(loanApplicationDTO, account, client, loan);
 
-                    //Crear y Guardae el ClientLoan
-                    var ClientLoan = new ClientLoan
-                    {
-                        ClientId = client.Id,
-                        LoanId = loan.Id,
-                        Amount = totalAmount,
-                        Payments = loanApplicationDTO.Payments
-
-                    };
-                    _clientLoanRepository.Save(ClientLoan);
-
-                    //Crédito para la cuenta de destino
-                    var Transaction = new Models.Transaction
-                    {
-                        Type = TransactionType.CREDIT,
-                        Amount = loanApplicationDTO.Amount,
-                        Description = "Préstamo Aprobado " + loan.Name,
-                        AccountId = account.Id,
-                        Date = DateTime.Now,
-                    };
-                    _transactionRepository.Save(Transaction);
-
-
-                    
-                    //Actualizar el Balance de la cuenta sumando el monto del préstamo
-                    account.Balance += loanApplicationDTO.Amount;
-
-                    //Guardar la cuenta
-
-                    _accountRepository.Save(account);
-
+                                 
                     scope.Complete();
                     return StatusCode(201);
 
                 }
-
-
                 catch (Exception ex)
                 {
                     return StatusCode(500, ex.Message);

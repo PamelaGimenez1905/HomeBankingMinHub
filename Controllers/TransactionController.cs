@@ -1,7 +1,8 @@
 ﻿using HomeBankingMindHub.Models;
-using HomeBankingMindHub.Repositories;
+using HomeBankingMindHub.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Transactions;
 
 
 namespace HomeBankingMindHub.Controllers
@@ -10,17 +11,17 @@ namespace HomeBankingMindHub.Controllers
     [ApiController]
     public class TransactionController : ControllerBase
     {
-        private IClientRepository _clientRepository;
-        private IAccountRepository _accountRepository;
-        private ITransactionRepository _transactionRepository;
+        private IClientService _clientService;
+        private IAccountService _accountService;
+        private ITransactionService _transactionService;
 
-        public TransactionController(IClientRepository clientRepository, IAccountRepository accountRepository, ITransactionRepository transactionRepository)
+        public TransactionController(IClientService clientService, IAccountService accountService, ITransactionService transactionService)
 
         {
 
-            _clientRepository = clientRepository;
-            _accountRepository = accountRepository;
-            _transactionRepository = transactionRepository;
+            _clientService = clientService;
+            _accountService = accountService;
+            _transactionService = transactionService;
         }
 
 
@@ -29,6 +30,7 @@ namespace HomeBankingMindHub.Controllers
         [Authorize(Policy = "ClientOnly")]
         public IActionResult Post([FromBody] TransferDTO transferDTO)
         {
+            using (var scope = new TransactionScope())
           try
            {
             // Obtener el email del cliente autenticado
@@ -39,7 +41,7 @@ namespace HomeBankingMindHub.Controllers
               }
 
              // Buscar el cliente en la base de datos por su correo electrónico
-              Client client = _clientRepository.FindByEmail(email);
+              Client client = _clientService.FindByEmail(email);
 
               if (client == null)
                {
@@ -59,7 +61,7 @@ namespace HomeBankingMindHub.Controllers
                 }
 
              // Obtener la cuenta de origen
-                var fromAccount = _accountRepository.FindByNumber(transferDTO.FromAccountNumber);
+                Account fromAccount = _accountService.FindByNumber(transferDTO.FromAccountNumber);
 
              // Verificar que exista la cuenta de origen
               if (fromAccount == null)
@@ -74,45 +76,16 @@ namespace HomeBankingMindHub.Controllers
                }
 
             // Obtener la cuenta de destino
-              var toAccount = _accountRepository.FindByNumber(transferDTO.ToAccountNumber);
+              Account toAccount = _accountService.FindByNumber(transferDTO.ToAccountNumber);
 
            // Verificar que exista la cuenta de destino
               if (toAccount == null)
               {
                return StatusCode(403, "La cuenta de destino no existe.");
-              }
-
-                // Crear las transacciones 
-                Transaction newTransactionFrom = new Transaction
-                {
-                    AccountId = fromAccount.Id,
-                    Type = TransactionType.DEBIT,
-                    Amount = transferDTO.Amount,
-                    Description = $"{transferDTO.Description} (DEBIT from {transferDTO.FromAccountNumber} to {transferDTO.ToAccountNumber})",
-                    Date = DateTime.Now
-
-                };
-
-                Transaction newTransactionTo = new Transaction
-                {
-                    AccountId = toAccount.Id,
-                    Type = TransactionType.CREDIT,
-                    Amount = transferDTO.Amount,
-                    Description = $"{transferDTO.Description} (CREDIT from {transferDTO.FromAccountNumber} to {transferDTO.ToAccountNumber})",
-                    Date = DateTime.Now
-                };
-                _transactionRepository.Save(newTransactionFrom);
-                _transactionRepository.Save(newTransactionTo);
-
-                //Actualizamos los montos
-                fromAccount.Balance -= transferDTO.Amount;
-                toAccount.Balance += transferDTO.Amount;
-
-                //guardamos
-                _accountRepository.Save(fromAccount);
-                _accountRepository.Save(toAccount);
-
-                return StatusCode(201, "Transaccion creada con Exito");
+              }               
+                    _transactionService.CreateTransaction(fromAccount, toAccount, transferDTO);
+                    scope.Complete();
+                    return Created(); 
 
             }
             catch

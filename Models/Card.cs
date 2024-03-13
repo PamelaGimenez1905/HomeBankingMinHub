@@ -12,5 +12,8 @@
         public DateTime ThruDate { get; set; }
         public long ClientId { get; set; }  
         public Client Client { get; set; }
+
+
+       
     }
 }
